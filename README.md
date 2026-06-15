@@ -1,13 +1,13 @@
 # MiniClaw AI Assistant Framework
 
-MiniClaw 是一个轻量级、模块化、的 Java AI 助手核心框架。
+MiniClaw 是一个轻量级、模块化的 Java AI 助手核心框架。
 
 
 ## 🚀 核心功能 (Core Features)
 
 ### 1. 多 LLM 提供商的统一抽象
-- 定义了标准化的 `LLMProvider` 接口，抹平了不同大模型 API 之间的结构差异。
-- 原生支持 **Function Calling（工具调用）** 与 **SSE（流式输出）**。
+- 定义了标准化的 `LLMProvider` 接口。
+- 支持 **Function Calling（工具调用）** 与 **SSE（流式输出）**。
 
 ### 2. 基于插件架构的工具系统
 - 工具开发者只需实现框架的 `Tool` 接口，提供工具名称、描述、JSON Schema（参数定义）以及执行逻辑，并打包为独立的 `.jar` 文件即可。
