@@ -1,0 +1,17 @@
+llm:
+  provider: deepseek # Can be openai, anthropic, ollama, deepseek
+  deepseek:
+    apiKey: "sk-989a2785202b421ea40bb0a12ad9f049"
+    url: "https://api.deepseek.com/chat/completions"
+    model: "deepseek-chat"
+  openai:
+    apiKey: "your-openai-api-key"
+    url: "https://api.openai.com/v1/chat/completions"
+    model: "gpt-3.5-turbo"
+  anthropic:
+    apiKey: "your-anthropic-api-key"
+    url: "https://api.anthropic.com/v1/messages"
+    model: "claude-3-haiku-20240307"
+  ollama:
+    url: "http://localhost:11434/api/chat"
+    model: "llama3"
