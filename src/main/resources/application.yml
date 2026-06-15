@@ -1,7 +1,7 @@
 llm:
   provider: deepseek # Can be openai, anthropic, ollama, deepseek
   deepseek:
-    apiKey: "sk-989a2785202b421ea40bb0a12ad9f049"
+    apiKey: "YOUR_DEEPSEEK_API_KEY_HERE"
     url: "https://api.deepseek.com/chat/completions"
     model: "deepseek-chat"
   openai:
