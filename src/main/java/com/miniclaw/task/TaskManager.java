@@ -39,42 +39,56 @@ public class TaskManager {
         executor.submit(() -> {
             task.setStatus(TaskStatus.RUNNING);
             try {
-                context.addMessage(new Message("user", prompt));
+                // Phase 1: Task Decomposition (Planning)
+                System.out.println("\n[System] Thinking & Decomposing Task...");
+                String planningPrompt = "Please analyze the following request and break it down into a step-by-step plan. " +
+                                        "Only output the logical steps, do not execute them yet.\nRequest: " + prompt;
+                
+                context.addMessage(new Message("user", planningPrompt));
+                LLMResponse planResponse = llmProvider.chatWithTools(context.getMessages(), null, null);
+                System.out.println("\n[Plan Generated]:\n" + planResponse.getContent());
+                context.addMessage(new Message("assistant", planResponse.getContent()));
+                
+                // Phase 2: Execution with ReAct Loop (Reasoning and Acting)
+                context.addMessage(new Message("user", "Now, please execute the plan step by step using the available tools. Once all steps are finished, provide the final answer."));
+                
                 List<Tool> availableTools = new ArrayList<>(ToolRegistry.getInstance().getAllTools());
+                int maxIterations = 10; // Prevent infinite loops
+                int currentIteration = 0;
+                boolean finished = false;
                 
-                // Round 1: LLM thinks and decides to use a tool or returns final response
-                LLMResponse response = llmProvider.chatWithTools(context.getMessages(), availableTools, streamCallback);
-                
-                if (response.isToolCall()) {
-                    System.out.println("\n[System] LLM decided to call tool: " + response.getToolName());
-                    Tool tool = ToolRegistry.getInstance().getTool(response.getToolName());
-                    if (tool != null) {
-                        String toolResult = tool.execute(response.getToolArguments());
-                        context.addMessage(new Message("tool", toolResult));
-                        System.out.println("[System] Tool executed, result: " + toolResult);
+                while (currentIteration < maxIterations && !finished) {
+                    currentIteration++;
+                    LLMResponse response = llmProvider.chatWithTools(context.getMessages(), availableTools, streamCallback);
+                    
+                    if (response.isToolCall()) {
+                        System.out.println("\n[System] Step " + currentIteration + " - Action: Calling Tool [" + response.getToolName() + "] with args: " + response.getToolArguments());
+                        Tool tool = ToolRegistry.getInstance().getTool(response.getToolName());
                         
-                        // Round 2: LLM summarizes
-                        LLMResponse finalResponse = llmProvider.chatWithTools(context.getMessages(), availableTools, streamCallback);
-                        
-                        if (finalResponse.isToolCall()) {
-                            // Example requirement: "输出：北京的天气，同时写入一个txt文件中"
-                            // If LLM decides to write to a file after summarizing:
-                            Tool writeTool = ToolRegistry.getInstance().getTool(finalResponse.getToolName());
-                            if (writeTool != null) {
-                                String writeResult = writeTool.execute(finalResponse.getToolArguments());
-                                System.out.println("\n[System] Wrote to file: " + writeResult);
+                        if (tool != null) {
+                            try {
+                                String toolResult = tool.execute(response.getToolArguments());
+                                System.out.println("[System] Observation: " + toolResult);
+                                // Feed the result back to LLM for the next reasoning step
+                                context.addMessage(new Message("tool", toolResult));
+                            } catch (Exception e) {
+                                System.err.println("[System] Tool Execution Error: " + e.getMessage());
+                                context.addMessage(new Message("tool", "Error executing tool: " + e.getMessage()));
                             }
-                            task.setResult("Tool execution completed.");
                         } else {
-                            context.addMessage(new Message("assistant", finalResponse.getContent()));
-                            task.setResult(finalResponse.getContent());
+                            System.err.println("[System] Tool not found: " + response.getToolName());
+                            context.addMessage(new Message("tool", "Error: Tool '" + response.getToolName() + "' does not exist."));
                         }
                     } else {
-                        throw new RuntimeException("Tool not found: " + response.getToolName());
+                        // If the LLM doesn't call a tool, it means it has gathered enough information to output the final answer for this sub-task or the whole task.
+                        context.addMessage(new Message("assistant", response.getContent()));
+                        task.setResult(response.getContent());
+                        finished = true; // Exit the loop
                     }
-                } else {
-                    context.addMessage(new Message("assistant", response.getContent()));
-                    task.setResult(response.getContent());
+                }
+                
+                if (currentIteration >= maxIterations) {
+                    System.err.println("\n[System] Warning: Max iterations reached. The task might be too complex or stuck in a loop.");
                 }
                 
                 task.setStatus(TaskStatus.SUCCESS);

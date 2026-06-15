@@ -1,28 +1,25 @@
 # MiniClaw AI Assistant Framework
 
-MiniClaw 是一个轻量级、模块化、无重型中间件依赖（无 Spring Boot）的 Java AI 助手核心框架。
-本项目旨在提供高度可扩展的 LLM 抽象、企业级插件工具系统，以及具备深度思考和任务拆解能力的任务调度引擎。
+MiniClaw 是一个轻量级、模块化、的 Java AI 助手核心框架。
+
 
 ## 🚀 核心功能 (Core Features)
 
 ### 1. 多 LLM 提供商的统一抽象
 - 定义了标准化的 `LLMProvider` 接口，抹平了不同大模型 API 之间的结构差异。
 - 原生支持 **Function Calling（工具调用）** 与 **SSE（流式输出）**。
-- 支持无缝切换大模型提供商（已内置 DeepSeek 与 Ollama 的适配实现），只需修改 `application.yml` 配置文件即可实现零代码切换，并支持异常降级（Mock Fallback）机制。
 
 ### 2. 基于插件架构的工具系统
-- 采用企业级“微内核”设计，核心框架（Host）与具体工具（Plugin）在物理文件上完全解耦。
 - 工具开发者只需实现框架的 `Tool` 接口，提供工具名称、描述、JSON Schema（参数定义）以及执行逻辑，并打包为独立的 `.jar` 文件即可。
 
 ### 3. 动态工具发现机制
-- 抛弃了静态硬编码注册的模式。框架内置了基于 `URLClassLoader` 的 `PluginLoader`。
 - 程序启动时，会自动扫描根目录下的 `plugins/` 文件夹。
-- 动态加载外部 `.jar` 包，提取其中的 `.class` 字节码文件，利用 Java 反射自动实例化并注册到 `ToolRegistry`，实现**“约定优于配置”**的即插即用体验。
+- 动态加载外部 `.jar` 包，提取其中的 `.class` 字节码文件，利用 Java 反射自动实例化并注册到 `ToolRegistry`。
 
 ### 4. 智能任务管理系统 (Task Management)
-- **异步调度**：基于 `ExecutorService` 实现请求非阻塞处理，具有完整的任务生命周期状态管理（PENDING, RUNNING, SUCCESS, FAILED）。
-- **任务拆解 (Planning Phase)**：面对用户的复杂请求，系统会引导大模型首先进行“思考”，将复杂需求拆解为分步逻辑执行计划。
-- **ReAct 自主循环 (Reasoning and Acting)**：打破了固定轮数的限制。大模型可以自主决定连续调用多个工具（Chain of Tools）。工具的执行结果或报错异常（Exception）会作为观察结果（Observation）实时喂回给大模型，赋予系统**反思与自我纠错**的能力。
+- **异步调度**：基于 `ExecutorService` 实现请求非阻塞处理。
+- **任务拆解**：面对用户的复杂请求，系统会引导大模型首先进行“思考”，将复杂需求拆解为分步逻辑执行计划。
+- **ReAct 循环**：模型可以自主决定连续调用多个工具。工具的执行结果或报错异常（Exception）会作为观察结果（Observation）实时喂回给大模型。
 
 ---
 

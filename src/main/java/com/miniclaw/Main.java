@@ -3,7 +3,7 @@ package com.miniclaw;
 import com.miniclaw.task.Task;
 import com.miniclaw.task.TaskManager;
 import com.miniclaw.task.TaskStatus;
-import com.miniclaw.tool.ToolScanner;
+import com.miniclaw.tool.PluginLoader;
 
 import java.util.Scanner;
 
@@ -11,9 +11,9 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Initializing MiniClaw Framework...");
         
-        // 1. Dynamic tool discovery
-        System.out.println("Scanning for tools...");
-        ToolScanner.scanAndRegister("com.miniclaw.tool.builtin");
+        // Load external JAR plugins
+        System.out.println("Scanning for external JAR plugins...");
+        PluginLoader.loadPluginsFromDir("plugins");
         
         System.out.println("\nMiniClaw AI Assistant is ready. Type 'exit' to quit.");
         
